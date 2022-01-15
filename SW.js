@@ -1,25 +1,32 @@
 const { inv } = require("mathjs");
 
-//function multiplyMatrices(U, V) {
-//  var Z = [];
-//  for (var i = 0; i < U.length; i++) {
-//    Z[i] = [];
-//    for (var j = 0; j < V[0].length; j++) {
-//      var sum = 0;
-//      for (var k = 0; k < U[0].length; k++) {
-//        sum += U[i][k] * V[k][j];
-//     }
-//      Z[i][j] = sum;
-//    }
-//  }
-//  return Z;
-//}
+function SumVecSpecial(a, b) {
+  const uLen = a.length;
+  var out = Array(uLen);
+  for (var col = 0; col < uLen; col++) {
+    out[col] = a[col][0] + b[col];
+  }
+  return out;
+}
 
 function DiffVec(a, b) {
   const uLen = a.length;
   var out = Array(uLen);
   for (var col = 0; col < uLen; col++) {
     out[col] = a[col] - b[col];
+  }
+  return out;
+}
+
+function VecPlusMatrix(v, M) {
+  const nrow = v.length;
+  const ncol = M[0].length;
+  var out = constructZeros(ncol, nrow);
+
+  for (var r = 0; r < nrow; ++r) {
+    for (var c = 0; c < ncol; ++c) {
+      out[c][r] = v[r] + M[c][r];
+    }
   }
   return out;
 }
@@ -92,28 +99,83 @@ function constructZeros(ncol, nrow) {
 function SWHeart(u, v, alpha) {
   var H = [];
   // Predefine H
-
-  const nrow = v.length;
-  const ncol = u.length;
-
+  const nrow = u.length;
+  const ncol = v.length;
   var H = new Array(nrow);
-
   for (var i = 0; i < H.length; i++) {
+    // Substitute H.length with nrow
     H[i] = new Array(ncol);
   }
 
   // For each element, calculate heart of W
-  for (var col = 0; col < ncol; col++) {
-    for (var row = 0; row < nrow; row++) {
+  for (var row = 0; row < nrow; row++) {
+    for (var col = 0; col < ncol; col++) {
       H[row][col] =
         0.5 *
-        (alpha * (u[col][0] + v[row][0]) +
-          Math.exp(-alpha * (u[col][0] + v[row][0])) -
-          alpha * Math.abs(u[col][0] - v[row][0]) -
-          Math.exp(-alpha * Math.abs(u[col][0] - v[row][0])));
+        (alpha * (u[row][0] + v[col][0]) +
+          Math.exp(-alpha * (u[row][0] + v[col][0])) -
+          alpha * Math.abs(u[row][0] - v[col][0]) -
+          Math.exp(-alpha * Math.abs(u[row][0] - v[col][0])));
     }
   }
   return H;
+}
+
+function SWCalibrate(r_Obs, M_Obs, ufr, alpha) {
+  const uLen = r_Obs.length;
+  var b = [];
+  const C = constructIdentity(uLen);
+  var p = Array(uLen);
+  var d = Array(uLen);
+  var Q = constructZeros(uLen, uLen);
+  var q = Array(uLen);
+
+  for (var col = 0; col < uLen; col++) {
+    //    p = (1+r).^(-M);
+    p[col] = Math.pow(1 + r_Obs[col][0], -M_Obs[col][0]);
+    //    d = exp(-log(1+ufr) .* M);
+    d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]);
+    //    Q = diag(d) * C;
+    Q[col][col] = C[col][col] * d[col];
+  }
+  //    q = C'*d;
+  q = multiplyVec(C, d);
+  var H = SWHeart(M_Obs, M_Obs, alpha);
+  //    H = SWHeart(M, M, alpha);
+  const temp = multiply(multiply(Q, H), Q);
+  const temp2 = DiffVec(p, q);
+  //    b = (Q' * H * Q)\(p-q);
+  b = multiplyVec(inv(temp), temp2);
+  return b;
+}
+
+// Projection /////////////////////////////////////////
+
+function SWExtrapolate(T_Obs, M_Obs, b, ufr, alpha) {
+  const uLen = M_Obs.length;
+  const TLen = T_Obs.length;
+  const C = constructIdentity(uLen);
+  var d = Array(uLen);
+  var Q = constructZeros(uLen, uLen);
+
+  for (var col = 0; col < uLen; col++) {
+    d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]);
+    Q[col][col] = C[col][col] * d[col];
+  }
+  var H = SWHeart(T_Obs, M_Obs, alpha);
+  var temp2 = Array(TLen);
+  var dDiag = constructZeros(TLen, TLen);
+  for (var col = 0; col < TLen; col++) {
+    dDiag[col][col] = Math.exp(-Math.log(1 + ufr) * T_Obs[col][0]);
+    temp2[col] = Math.exp(-Math.log(1 + ufr) * T_Obs[col][0]);
+  }
+
+  var p = SumVecSpecial(multiplyVec(multiply(multiply(dDiag, H), Q), b), temp2);
+  var r = Array(TLen);
+  for (var col = 0; col < TLen; col++) {
+    r[col] = Math.pow(p[col], -1 / T_Obs[col]) - 1;
+  }
+  return r;
 }
 
 M_Obs = [
@@ -162,44 +224,6 @@ r_Obs = [
 ];
 ufr = 0.042;
 alpha = 0.142068;
-
-function SWCalibrate(r, M, ufr, alpha) {
-  const uLen = r_Obs.length;
-  var b = [];
-  const C = constructIdentity(uLen);
-
-  var p = Array(uLen);
-  var d = Array(uLen);
-  var Q = constructZeros(uLen, uLen);
-  var q = Array(uLen);
-
-  for (var col = 0; col < uLen; col++) {
-    //    p = (1+r).^(-M);
-    p[col] = Math.pow(1 + r_Obs[col][0], -M_Obs[col][0]);
-    //    d = exp(-log(1+ufr) .* M);
-    d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]);
-    //    Q = diag(d) * C;
-    Q[col][col] = C[col][col] * d[col];
-  }
-  //    q = C'*d;
-  q = multiplyVec(C, d);
-  var H = SWHeart(M_Obs, M_Obs, alpha);
-
-  //    H = SWHeart(M, M, alpha);
-  temp = multiply(multiply(Q, H), Q);
-
-  temp2 = DiffVec(p, q);
-
-  //    b = (Q' * H * Q)\(p-q);
-  b = multiplyVec(inv(temp), temp2);
-
-  return b;
-}
-
-b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
-console.table(b);
-
-// Projection
 
 T_Obs = [
   [1],
@@ -267,15 +291,10 @@ T_Obs = [
   [63],
   [64],
   [65],
-  [66],
 ];
 
-const uLen = r_Obs.length;
-var b = [];
-const C = constructIdentity(uLen);
+b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
+console.log("This is b:");
+console.table(b);
 
-var p = Array(uLen);
-var d = Array(uLen);
-var Q = constructZeros(uLen, uLen);
-
-//var H = SWHeart(M_Obs, M_Obs, alpha);
+console.log(SWExtrapolate(T_Obs, M_Obs, b, ufr, alpha));
