@@ -1,115 +1,123 @@
 const { inv } = require("mathjs");
 
 function SumVecSpecial(a, b) {
-  const uLen = a.length;
-  var out = Array(uLen);
-  for (var col = 0; col < uLen; col++) {
+  /**
+   * Sum vectors where the first vector is a column vector of type a = [[1],[2]]
+   * @param {Array} a first array of arrays of length 1
+   * @param {Array} b second array of numbers
+   * @return {Array}  array where each element is calculated as a + b
+   */
+  const len = a.length;
+  let out = Array(len);
+  for (let col = 0; col < len; col++) {
     out[col] = a[col][0] + b[col];
   }
   return out;
 }
 
-function DiffVec(a, b) {
-  const uLen = a.length;
-  var out = Array(uLen);
-  for (var col = 0; col < uLen; col++) {
+function diffVec(a, b) {
+  /**
+   * Element-wise subtracts vector b from vector a
+   * @param {Array} a first array of numbers.
+   * @param {Array} b second array of numbers.
+   * @return {Array}  array where each element is calculated as a minus b
+   */
+  const len = a.length;
+  let out = Array(len);
+  for (let col = 0; col < len; col++) {
     out[col] = a[col] - b[col];
   }
   return out;
 }
 
-function VecPlusMatrix(v, M) {
-  const nrow = v.length;
-  const ncol = M[0].length;
-  var out = constructZeros(ncol, nrow);
-
-  for (var r = 0; r < nrow; ++r) {
-    for (var c = 0; c < ncol; ++c) {
-      out[c][r] = v[r] + M[c][r];
+function multiply(A, B) {
+  /**
+   * Matrix multiplication of matrices A and B so A*B
+   * @param {Array} A Array of arrays where the len of outer array is the number of rows and the inner aray is the number of columnet. Ex. A=[[1,2],[3,4]]
+   * @param {Array} B Array of arrays where the len of outer array is the number of rows and the inner aray is the number of columnet. Ex. B=[[5,6],[7,8]]
+   * @return {Array}  Array of arrays calculated as a matrix product of A and B; A*B; Ex. out = [[19, 22], [43, 50]]
+   */
+  const aNumRows = A.length,
+    aNumCols = A[0].length,
+    bNumCols = B[0].length,
+    out = new Array(aNumRows); // initialize array of rows
+  for (let row = 0; row < aNumRows; ++row) {
+    out[row] = new Array(bNumCols); // initialize the current row
+    for (let col = 0; col < bNumCols; ++col) {
+      out[row][col] = 0; // initialize the current cell
+      for (let i = 0; i < aNumCols; ++i) {
+        out[row][col] += A[row][i] * B[i][col];
+      }
     }
   }
   return out;
 }
 
-function multiply(a, b) {
-  var aNumRows = a.length,
-    aNumCols = a[0].length,
-    bNumRows = b.length,
-    bNumCols = b[0].length,
-    m = new Array(aNumRows); // initialize array of rows
-  for (var r = 0; r < aNumRows; ++r) {
-    m[r] = new Array(bNumCols); // initialize the current row
-    for (var c = 0; c < bNumCols; ++c) {
-      m[r][c] = 0; // initialize the current cell
-      for (var i = 0; i < aNumCols; ++i) {
-        m[r][c] += a[r][i] * b[i][c];
-      }
-    }
-  }
-  return m;
-}
-
-function multiplyVec(A, b) {
-  var aNumRows = A.length,
+function multiplyMatVec(A, b) {
+  /**
+   * Matrix multiplication of a matrix A and a vector b so A*b
+   * @param {Array} A Array of arrays where the len of outer array is the number of rows and the inner aray is the number of columnet. Ex. A=[[1,2],[3,4]]
+   * @param {Array} b Array of numbers Ex. B=[5,6]
+   * @return {Array}  Array of arrays calculated as a matrix product of A and b; A*b; Ex. out = [[17],[39]]
+   */
+  let aNumRows = A.length,
     aNumCols = A[0].length,
-    bNumCols = 1,
-    m = new Array(aNumRows); // initialize array of rows
-  for (var r = 0; r < aNumRows; ++r) {
-    m[r] = new Array(bNumCols); // initialize the current row
-    for (var c = 0; c < bNumCols; ++c) {
-      m[r][c] = 0; // initialize the current cell
-      for (var i = 0; i < aNumCols; ++i) {
-        m[r][c] += A[r][i] * b[i];
-      }
+    out = new Array(aNumRows); // initialize array of rows
+  for (let row = 0; row < aNumRows; ++row) {
+    out[row] = new Array(1); // initialize the current row
+    out[row][0] = 0; // initialize the current cell
+    for (let i = 0; i < aNumCols; ++i) {
+      out[row][0] += A[row][i] * b[i];
     }
   }
-  return m;
+  return out;
 }
 
-function constructIdentity(num) {
-  const res = [];
-  for (let i = 0; i < num; i++) {
-    if (!res[i]) {
-      res[i] = [];
+function constructIdentity(dim) {
+  /**
+   * Construct an identity matrix where every element is equal to 0 except the diagonal elements that have 1
+   * @param {Int} dimension of the identity matrix. Ex dim = 2
+   * @return {Array} returns an array of arrays representing the identity matrix out = [[1,0],[0,1]]
+   */
+  const out = [];
+  for (let row = 0; row < dim; row++) {
+    if (!out[row]) {
+      out[row] = [];
     }
-    for (let j = 0; j < num; j++) {
-      if (i === j) {
-        res[i][j] = 1;
+    for (let col = 0; col < dim; col++) {
+      if (row === col) {
+        out[row][col] = 1;
       } else {
-        res[i][j] = 0;
+        out[row][col] = 0;
       }
     }
   }
-  return res;
+  return out;
 }
 
 function constructZeros(ncol, nrow) {
-  const res = [];
+  const out = [];
   for (let col = 0; col < ncol; col++) {
-    if (!res[col]) {
-      res[col] = [];
+    if (!out[col]) {
+      out[col] = [];
     }
     for (let row = 0; row < nrow; row++) {
-      res[col][row] = 0;
+      out[col][row] = 0;
     }
   }
-  return res;
+  return out;
 }
 
 function SWHeart(u, v, alpha) {
-  var H = [];
   // Predefine H
-  const nrow = u.length;
-  const ncol = v.length;
-  var H = new Array(nrow);
-  for (var i = 0; i < H.length; i++) {
-    // Substitute H.length with nrow
-    H[i] = new Array(ncol);
-  }
+  const nrow = u.length,
+    ncol = v.length;
+  let H = new Array(nrow);
 
   // For each element, calculate heart of W
-  for (var row = 0; row < nrow; row++) {
-    for (var col = 0; col < ncol; col++) {
+  for (let row = 0; row < nrow; row++) {
+    H[row] = new Array(ncol);
+    for (let col = 0; col < ncol; col++) {
       H[row][col] =
         0.5 *
         (alpha * (u[row][0] + v[col][0]) +
@@ -122,58 +130,53 @@ function SWHeart(u, v, alpha) {
 }
 
 function SWCalibrate(r_Obs, M_Obs, ufr, alpha) {
-  const uLen = r_Obs.length;
-  var b = [];
-  const C = constructIdentity(uLen);
-  var p = Array(uLen);
-  var d = Array(uLen);
-  var Q = constructZeros(uLen, uLen);
-  var q = Array(uLen);
+  const len = r_Obs.length,
+    C = constructIdentity(len);
 
-  for (var col = 0; col < uLen; col++) {
-    //    p = (1+r).^(-M);
-    p[col] = Math.pow(1 + r_Obs[col][0], -M_Obs[col][0]);
-    //    d = exp(-log(1+ufr) .* M);
-    d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]);
-    //    Q = diag(d) * C;
-    Q[col][col] = C[col][col] * d[col];
+  let b = [],
+    p = Array(len),
+    d = Array(len),
+    q = Array(len),
+    Q = constructZeros(len, len);
+
+  for (let col = 0; col < len; col++) {
+    p[col] = Math.pow(1 + r_Obs[col][0], -M_Obs[col][0]); //    p = (1+r).^(-M);
+    d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]); //    d = exp(-log(1+ufr) .* M);
+    Q[col][col] = C[col][col] * d[col]; //    Q = diag(d) * C;
   }
-  //    q = C'*d;
-  q = multiplyVec(C, d);
-  var H = SWHeart(M_Obs, M_Obs, alpha);
-  //    H = SWHeart(M, M, alpha);
-  const temp = multiply(multiply(Q, H), Q);
-  const temp2 = DiffVec(p, q);
-  //    b = (Q' * H * Q)\(p-q);
-  b = multiplyVec(inv(temp), temp2);
-  return b;
+
+  q = multiplyMatVec(C, d); //    q = C'*d;
+  let H = SWHeart(M_Obs, M_Obs, alpha); // Calculate SWHeart
+  return multiplyMatVec(inv(multiply(multiply(Q, H), Q)), diffVec(p, q)); //    b = (Q' * H * Q)\(p-q);
 }
 
-// Projection /////////////////////////////////////////
+function SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha) {
+  const obsLen = M_Obs.length,
+    tarLen = M_Tar.length,
+    C = constructIdentity(obsLen);
+  let d = Array(obsLen),
+    Q = constructZeros(obsLen, obsLen),
+    expom = Array(tarLen),
+    dDiag = constructZeros(tarLen, tarLen),
+    r = Array(tarLen);
 
-function SWExtrapolate(T_Obs, M_Obs, b, ufr, alpha) {
-  const uLen = M_Obs.length;
-  const TLen = T_Obs.length;
-  const C = constructIdentity(uLen);
-  var d = Array(uLen);
-  var Q = constructZeros(uLen, uLen);
-
-  for (var col = 0; col < uLen; col++) {
+  for (let col = 0; col < obsLen; col++) {
     d[col] = Math.exp(-Math.log(1 + ufr) * M_Obs[col][0]);
     Q[col][col] = C[col][col] * d[col];
   }
-  var H = SWHeart(T_Obs, M_Obs, alpha);
-  var temp2 = Array(TLen);
-  var dDiag = constructZeros(TLen, TLen);
-  for (var col = 0; col < TLen; col++) {
-    dDiag[col][col] = Math.exp(-Math.log(1 + ufr) * T_Obs[col][0]);
-    temp2[col] = Math.exp(-Math.log(1 + ufr) * T_Obs[col][0]);
+  let H = SWHeart(M_Tar, M_Obs, alpha);
+
+  for (let col = 0; col < tarLen; col++) {
+    dDiag[col][col] = Math.exp(-Math.log(1 + ufr) * M_Tar[col][0]);
+    expom[col] = Math.exp(-Math.log(1 + ufr) * M_Tar[col][0]);
   }
 
-  var p = SumVecSpecial(multiplyVec(multiply(multiply(dDiag, H), Q), b), temp2);
-  var r = Array(TLen);
-  for (var col = 0; col < TLen; col++) {
-    r[col] = Math.pow(p[col], -1 / T_Obs[col]) - 1;
+  let p = SumVecSpecial(
+    multiplyMatVec(multiply(multiply(dDiag, H), Q), b),
+    expom
+  );
+  for (let col = 0; col < tarLen; col++) {
+    r[col] = Math.pow(p[col], -1 / M_Tar[col]) - 1;
   }
   return r;
 }
@@ -225,7 +228,7 @@ r_Obs = [
 ufr = 0.042;
 alpha = 0.142068;
 
-T_Obs = [
+M_Tar = [
   [1],
   [2],
   [3],
@@ -293,8 +296,9 @@ T_Obs = [
   [65],
 ];
 
+// Example of use
 b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
-console.log("This is b:");
-console.table(b);
 
-console.log(SWExtrapolate(T_Obs, M_Obs, b, ufr, alpha));
+console.table(b);
+let r = SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha);
+console.log(r);
