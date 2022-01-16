@@ -25,7 +25,7 @@ Note that this implementation assumes that the yields were calculated on ZCB. Th
 The implementation is split in two parts: 
 
 1. The available market data and the parameters are used to "calibrate" the algorithm. This returns a calibration vector that can be used to interpolate or extrapolate target maturities. This is done by calibrating the kernel functions. Look at the function `SWCalibrate()`
-2. The yields for ZCB with targeted maturities are Interpolated/extrapolated. Look at the function `ExtrapolateSW()`
+2. The yields for ZCB with targeted maturities are Interpolated/extrapolated. Look at the function `SWExtrapolate()`
  
  The syntax in the functions tries to be consistent with EIOPA technical specifications.
  
