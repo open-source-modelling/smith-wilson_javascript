@@ -35,13 +35,13 @@ The implementation is split in two parts:
 The commands to calculate the target yields would be:
 
 ``` javascript
-var M_Obs = [[1], [2], [4], [5], [6], [7]];
-var r_Obs = [[0.01], [0.02], [0.03], [0.032], [0.035], [0.04]];
+let M_Obs = [[1], [2], [4], [5], [6], [7]];
+let r_Obs = [[0.01], [0.02], [0.03], [0.032], [0.035], [0.04]];
 
-var ufr = 0.04;
-var alpha = 0.15;
+let ufr = 0.04;
+let alpha = 0.15;
 
-var M_Tar = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [15], [20]];
+let M_Tar = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [15], [20]];
 
 b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
 r = SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha);
