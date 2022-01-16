@@ -95,21 +95,36 @@ function constructIdentity(dim) {
   return out;
 }
 
-function constructZeros(ncol, nrow) {
-  const out = [];
-  for (let col = 0; col < ncol; col++) {
-    if (!out[col]) {
-      out[col] = [];
+function constructZeros(nrow, ncol) {
+  /**
+   * Construct a matrix with nrow rows and ncol columns where every element is equal to 0
+   * @param {Int} nrow number of rows of the identity matrix. Ex nrow = 2
+   * @param {Int} ncol number of columns of the identity matrix. Ex nrow = 3
+   * @return {Array} returns an array of arrays representing the zero matrix out = [[0,0,0],[0,0,0]]
+   */
+
+  let out = [];
+  for (let row = 0; row < nrow; row++) {
+    if (!out[row]) {
+      out[row] = [];
     }
-    for (let row = 0; row < nrow; row++) {
-      out[col][row] = 0;
+    for (let col = 0; col < ncol; col++) {
+      out[row][col] = 0;
     }
   }
   return out;
 }
 
 function SWHeart(u, v, alpha) {
-  // Predefine H
+  /**
+   * Calculate the matrix H (Heart of the Wilson function)
+   * @param {Array} u  n_1 x 1 array arrays of maturities. Ex. u = [[1], [3]]
+   * @param {Array} v  n_2 x 1 array of arrays of maturities. Ex. v = [[1], [2], [3], [5]]
+   * @param {Float} alpha  floating number representing the convergence speed parameter alpha. Ex. alpha = 0.05
+   * @returns {Array}  n_1 x n_2 array of arrays representing the Heart of the Wilson function for selected maturities and parameter alpha. H is calculated as in the paragraph 132 of the EIOPA documentation.
+   * For more information see https://www.eiopa.europa.eu/sites/default/files/risk_free_interest_rate/12092019-technical_documentation.pdf
+   */
+
   const nrow = u.length,
     ncol = v.length;
   let H = new Array(nrow);
@@ -130,6 +145,16 @@ function SWHeart(u, v, alpha) {
 }
 
 function SWCalibrate(r_Obs, M_Obs, ufr, alpha) {
+  /**
+   * Calculate the calibration vector "b" using a Smith-Wilson algorithm
+   * @param {Array} r_Obs n x 1 array of arrays representing rates, for which you wish to calibrate the algorithm. Each rate belongs to an observable zero coupon bond with a known maturity. Ex. r_Obs = [[0.0024], [0.0034]]
+   * @param {Array} M_Obs m x 1 array of arrays representing maturities of bonds, that have rates provided in input (r_Obs). Ex. M_Obs=[[1], [3]]
+   * @param {Float} ufr floating number, representing the ultimate forward rate. Ex. ufr = 0.042
+   * @param {Float} alpha floating number representing the convergence speed parameter alpha. Ex. alpha = 0.05
+   * @return {Array} n x 1 array of arrays representing the calibration vector "b" needed to interpolate and extrapolate b =[[14], [-21]]
+   *  For more information see https://www.eiopa.europa.eu/sites/default/files/risk_free_interest_rate/12092019-technical_documentation.pdf
+   */
+
   const len = r_Obs.length,
     C = constructIdentity(len);
 
@@ -151,6 +176,17 @@ function SWCalibrate(r_Obs, M_Obs, ufr, alpha) {
 }
 
 function SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha) {
+  /**
+   * Interpolate or/and extrapolate rates for targeted maturities using a Smith-Wilson algorithm.
+   * @param {Array} M_Target k x 1 array of arrays. Each element represents a bond maturity of interest. Ex. M_Tar = [[1], [2], [3], [5]]
+   * @param {Array} M_Obs n x 1 array of arrays. Observed bond maturities used for calibrating the calibration vector b. Ex. M_Obs = [[1], [3]]
+   * @param {Array}  b  n x 1 array of arrays. Calibration vector "b" calculated on observed bonds.
+   * @param {Float} ufr floating number, representing the ultimate forward rate. Ex. ufr = 0.042
+   * @param {Float} alpha floating number representing the convergence speed parameter alpha. Ex. alpha = 0.05
+   * @return {Array} k x 1 array of arrays. Represents the targeted rates for a zero-coupon bond. Each rate belongs to a targeted zero-coupon bond with a maturity from T_Target. Ex. r = [[0.0024], [0.0029], [0.0034], [0.0039]]
+   * For more information see https://www.eiopa.europa.eu/sites/default/files/risk_free_interest_rate/12092019-technical_documentation.pdf
+   */
+
   const obsLen = M_Obs.length,
     tarLen = M_Tar.length,
     C = constructIdentity(obsLen);
@@ -176,7 +212,7 @@ function SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha) {
     expom
   );
   for (let col = 0; col < tarLen; col++) {
-    r[col] = Math.pow(p[col], -1 / M_Tar[col]) - 1;
+    r[col] = [Math.pow(p[col], -1 / M_Tar[col]) - 1];
   }
   return r;
 }
@@ -296,7 +332,7 @@ M_Tar = [
   [65],
 ];
 
-// Example of use
+// Example of use ////////////////////////
 b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
 
 console.table(b);
