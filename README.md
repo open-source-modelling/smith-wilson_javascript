@@ -47,4 +47,6 @@ b = SWCalibrate(r_Obs, M_Obs, ufr, alpha);
 r = SWExtrapolate(M_Tar, M_Obs, b, ufr, alpha);
 console.table(r);
 ```
-
+### Example
+A running example of the algorithm can be found on this AWS deployment.
+http://qnity-alpha.s3-website.eu-central-1.amazonaws.com
