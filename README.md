@@ -15,7 +15,7 @@ This implementation takes as input the available market information, parameters 
 
 ### SW Parameters
  - Ultimate froward rate `ufr` represents the rate to which the rate curve will converge as time increases.
- - Convergence speed parameter `α` controls the speed at which the curve converges towards the `ufr` parameter from the last liquid point (last data point available in the market information input)
+ - Convergence speed parameter `alpha` controls the speed at which the curve converges towards the `ufr` parameter from the last liquid point (last data point available in the market information input)
 
 ### Desired output
  
