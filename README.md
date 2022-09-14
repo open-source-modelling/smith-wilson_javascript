@@ -50,3 +50,7 @@ console.table(r);
 ### Example
 A running example of the algorithm can be found on this AWS deployment.
 http://qnity-alpha.s3-website.eu-central-1.amazonaws.com
+
+###Note:
+To extrapolate the curve, it is enough to know the additional parameters(alpha, ufr), the maturities used for calibration and the vector b*Q. If this is the case, it is not difficult to modify the function `SWExtrapolate()` to take as input Qb instead of b. An example of this is the monthly risk free rate published by turopean Insurance and Occupational Pensions Authority (https://www.eiopa.europa.eu/tools-and-data/)
+
